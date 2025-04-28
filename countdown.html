@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>5/1 16:00 倒數計時</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(180deg, #1e3a8a, #60a5fa);
+      background-size: 400% 400%;
+      animation: gradientBG 10s ease infinite;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
+      color: white;
+      user-select: none;
+      overflow: hidden;
+    }
+    @keyframes gradientBG {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+    .countdown {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+    }
+    .countdown h1 {
+      font-size: 22px;
+      margin: 0 0 20px;
+      font-weight: 600;
+    }
+    .timer {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .time-unit {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 15px;
+      border-radius: 10px;
+      min-width: 60px;
+    }
+    .time-unit span {
+      font-size: 32px;
+      font-weight: bold;
+      display: block;
+      transition: transform 0.2s ease-in-out;
+    }
+    .time-unit span.changed {
+      transform: scale(1.1);
+    }
+    .time-unit label {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    @media (max-width: 400px) {
+      .countdown h1 {
+        font-size: 18px;
+      }
+      .time-unit span {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="countdown">
+    <h1>倒數至 2025/5/1 16:00</h1>
+    <div class="timer" id="timer">
+      <div class="time-unit">
+        <span id="days">0</span>
+        <label>天</label>
+      </div>
+      <div class="time-unit">
+        <span id="hours">0</span>
+        <label>時</label>
+      </div>
+      <div class="time-unit">
+        <span id="minutes">0</span>
+        <label>分</label>
+      </div>
+      <div class="time-unit">
+        <span id="seconds">0</span>
+        <label>秒</label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const targetDate = new Date(2025, 4, 1, 16, 0, 0).getTime();
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const timeRemaining = targetDate - now;
+
+      const days = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+
+      updateElement('days', days);
+      updateElement('hours', hours);
+      updateElement('minutes', minutes);
+      updateElement('seconds', seconds);
+
+      if (timeRemaining <= 0) {
+        clearInterval(countdownInterval);
+        document.getElementById('timer').innerHTML = '<h2>倒數結束！</h2>';
+      }
+    }
+
+    function updateElement(id, value) {
+      const element = document.getElementById(id);
+      if (element.textContent !== value.toString()) {
+        element.textContent = value;
+        element.classList.add('changed');
+        setTimeout(() => element.classList.remove('changed'), 200);
+      }
+    }
+
+    updateCountdown();
+    const countdownInterval = setInterval(updateCountdown, 1000);
+
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          console.log('螢幕喚醒已釋放');
+        });
+        console.log('螢幕保持喚醒中');
+      } catch (err) {
+        console.error('無法喚醒:', err);
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    });
+
+    requestWakeLock();
+
+    window.addEventListener('touchstart', () => {});
+  </script>
+</body>
+</html>
